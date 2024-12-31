@@ -1,0 +1,48 @@
+name: Build and Save Release Files
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch: # Permite iniciar manualmente
+
+jobs:
+  build-and-save:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Paso 1: Clonar el repositorio
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Paso 2: Instalar dependencias si es necesario
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      # Paso 3: Compilar los assets
+      - name: Build assets
+        run: make assets -j
+
+      # Paso 4: Compilar el proyecto principal
+      - name: Build project
+        run: make -j
+
+      # Paso 5: Crear carpeta release y mover archivos
+      - name: Prepare release folder
+        run: |
+          mkdir -p release
+          cp -r build/* release/
+
+      # Paso 6: Subir los archivos generados al repositorio
+      - name: Commit and Push release files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release/
+          git commit -m "Add release files [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
